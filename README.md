@@ -1,6 +1,6 @@
 # FeuilleDev's CLI
 
-> 🌿 Command Line tool for creating Feuille based project.
+> 🌿 Command Line tool for creating PaxoApp and Uploading it
 
 ## Features
 
