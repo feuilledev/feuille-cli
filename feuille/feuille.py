@@ -5,7 +5,7 @@
 
 import argparse
 import json
-from utils import *
+from .utils import *
 TEMPLATE_JSON = """
 {
     "name":"App_Name",
