@@ -5,7 +5,7 @@
 
 import argparse
 import json
-from .utils import *
+from utils import *
 TEMPLATE_JSON = """
 {
     "name":"App_Name",
@@ -24,7 +24,11 @@ TEMPLATE_JSON = """
 
 """
 VERSION = "1.0.0"
+
+
 def main():
+    secretshad = Secrets_Handlers()
+    terminal_utils.clear()
     print(f"== Feuille CLI (V {VERSION}) ==")
     print("[?] : Need help ? Use -h")
     argparser = argparse.ArgumentParser(description='Feuille CLI')
@@ -47,20 +51,20 @@ def main():
     """)
         print("If you do want to mess with the files order + bugs")
         _NAME = input("[?] : Name of the app : ")
-        _APP_MAIN = input("[?] : Main file : ")
+        #_APP_MAIN = input("[?] : Main file : ")
         _APP_VERSION = input("[?] : Version : ")
         _APP_AUTHOR = input("[?] : Author : ")
         print("[+] Creating a new feuille project")
         temp_demojson = json.loads(TEMPLATE_JSON)
         temp_demojson["name"] = _NAME
-        temp_demojson["app_main"] = _APP_MAIN
+        temp_demojson["app_main"] = "app.lua"
         temp_demojson["app_version"] = _APP_VERSION
         temp_demojson["app_author"] = _APP_AUTHOR
         temp_demojson["feuille_version"] = VERSION
         with open("feuille.json", "w") as f:
             json.dump(temp_demojson, f, indent=4)
         os.makedirs("src")
-        with open("src/main.lua", "w") as f:
+        with open("src/app.lua", "w") as f:
             f.write(f"print(\"My first lua file\")") 
         print("[+] Done, Happy coding !")
         print("[TIPS] : Use feuille -l to link all files and distribute your app !")
@@ -94,13 +98,35 @@ def main():
         print("Searhing for a feuille.json")
         if os.path.exists("feuille.json"):
             print("[+] Found")
+            terminal_utils.clear()
             with open("feuille.json", "r") as f:
                 data = json.load(f)
-                print("TODO")
+                _LIST_ORDERS_FILE = data["files_order"]
+                _LIST_ORDERS_ACTIVED = data["files_order_actived"]
+                print("ACTUAL CONFIG :")
+                print(f"[+] Name : {data['name']}")
+                print(f"[+] Main file : {data['app_main']}")
+                print(f"[+] Version : {data['app_version']}")
+                print(f"[+] Author : {data['app_author']}")
+                if _LIST_ORDERS_ACTIVED == "true":
+                    print(f"[+] Files order actived")
+                    for i in _LIST_ORDERS_FILE:
+                        print(f" - {i}")
+                else:
+                    print(f"[+] Files order inactived")
+
         else:
             print("[-] Not found")
             print("Please create a new project.")
     elif args.upload:
-        print("TODO")
+        if os.path.exists("feuille.json"):
+            store_select = ""
+            while store_select not in ["exit","EXIT"]:
+                terminal_utils.clear()
+                print("🌿 FEUILLE-CLI")
+                print("====================================================")
+                print(" [1] : FeuilleStore \n [2] : DJAppStore \n [IN-DEV] : PaxoStore")
+                print("[TIPS] : Type exit, EXIT to leave.")
+                store_select = input("[?] : Select a store to upload to : ")
 if __name__ == "__main__":
     main()

@@ -44,4 +44,58 @@ def minify_(text):
 
     output = output.replace('\n', '')
     return output
+class terminal_utils:
+    def clear():
+        if os.name == 'nt':
+            os.system('cls')
+        else:
+            os.system('clear')
+class Secrets_Handlers():
+
+    def __init__(self):
+        self.init() 
+        if "FEUILLE_KEYS" in os.environ:
+            self.keys = json.loads(os.environ["FEUILLE_KEYS"])
+            
+            
+    def modify_key(self,key_name,value):
+         if self.keys["keys"][key_name] is not None:
+             self.keys["keys"][key_name] = value
+         else:
+             self.keys["keys"][key_name] = value
+    def get_key(self,key_name):
+        if self.keys["keys"][key_name] is not None:
+            return self.keys["keys"][key_name]
+        else:
+            return None
+    def delete_key(self,key_name):
+        if self.keys["keys"][key_name] is not None:
+            del self.keys["keys"][key_name]
+        else:
+            return None
+    def save(self):
+        os.environ["FEUILLE_KEYS"] = json.dumps(self.keys)
+    def init(self):
+        if "FEUILLE_KEYS" in os.environ:
+            pass
+        else:
+            TEMP_JSON = """
+        {
+            "WARNING": "DO NOT SHARE THIS FILE WITH ANYONE",
+            "feuille":"true",
+            "keys":[{"DJAPPSTORE":"MYKEY"},{"FEUILLESTORE":"MYKEY"},{"PAXOSTORE":"MYKEY"}]
+        }
+        """
+            os.environ["FEUILLE_KEYS"] = json.dumps(json.loads(TEMP_JSON))
+
+
+class Stores_Handlers():
+    print("[+] : Loading...")
+    def dj_appstore():
+        print("[+] : Todo")
+    def feuillestore():
+        print("[+] : Todo")
+    def paxostore():
+        print("[+] : Todo")
+
 #print(minify_(compile_("test")))
