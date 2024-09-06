@@ -118,7 +118,7 @@ class Stores_Handlers():
                         tar.add(f"dist/assets/{i}")
                     tar.add("feuille.json")
                 print("[+] : Uploading...")
-                ICON_PATH = f"dist/{data["assets_folder"]}/{data['icon']}"
+                ICON_PATH = f'dist/{data["assets_folder"]}/{data["icon"]}'
                 x = requests.get(url="https://45.90.12.31:6517/add_app/paxo/",verify=False,cookies={"id_creator":SCRET.get_key("DJAPPSTORE")},data={"name":data["name"],"description":data["description"]},files={"icon":open(ICON_PATH,"rb"),"appfile":open("export.tar","rb")})
                 print(x.status_code)
                 print(x.text)
