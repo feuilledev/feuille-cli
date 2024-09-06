@@ -6,6 +6,9 @@ FEUILLE-CLI
 import os
 import re
 import json
+#import zipfile
+import tarfile
+import requests
 
 def link_(folder,main_file,config_file):
     print("[+] Linking all files in /src (this can take some times)")
@@ -50,49 +53,81 @@ class terminal_utils:
             os.system('cls')
         else:
             os.system('clear')
-class Secrets_Handlers():
+class Secrets_Handlers:
+    def __init__(self):  
+        self.home_dir = os.path.expanduser("~")
+        self.file_path = os.path.join(self.home_dir, "feuille_key.json")     
+        if os.path.exists(self.file_path):
+            self.keys = json.loads(open(self.file_path,"r").read())
+            #raise ValueError(self.keys)
+        else:
+            self.init() 
+            self.keys = {"keys": {}}
+            
+    def modify_key(self, key_name, value):
+        if key_name not in self.keys["keys"]:
+            raise ValueError("No keys found")
+        self.keys["keys"][key_name] = value
+        self.save()
 
-    def __init__(self):
-        self.init() 
-        if "FEUILLE_KEYS" in os.environ:
-            self.keys = json.loads(os.environ["FEUILLE_KEYS"])
-            
-            
-    def modify_key(self,key_name,value):
-         if self.keys["keys"][key_name] is not None:
-             self.keys["keys"][key_name] = value
-         else:
-             self.keys["keys"][key_name] = value
-    def get_key(self,key_name):
-        if self.keys["keys"][key_name] is not None:
-            return self.keys["keys"][key_name]
-        else:
-            return None
-    def delete_key(self,key_name):
-        if self.keys["keys"][key_name] is not None:
-            del self.keys["keys"][key_name]
-        else:
-            return None
+    def get_key(self, key_name):
+        return self.keys.get("keys", {}).get(key_name, None)
+    
+    def delete_key(self, key_name):
+        if "keys" in self.keys and key_name in self.keys["keys"]:
+            self.keys["keys"].pop(key_name, None)
+    
     def save(self):
-        os.environ["FEUILLE_KEYS"] = json.dumps(self.keys)
+        with open(self.file_path,"w") as f:
+            f.write(json.dumps(self.keys))
+    
     def init(self):
-        if "FEUILLE_KEYS" in os.environ:
-            pass
-        else:
+        if "FEUILLE_KEYS" not in os.environ:
             TEMP_JSON = """
-        {
-            "WARNING": "DO NOT SHARE THIS FILE WITH ANYONE",
-            "feuille":"true",
-            "keys":[{"DJAPPSTORE":"MYKEY"},{"FEUILLESTORE":"MYKEY"},{"PAXOSTORE":"MYKEY"}]
-        }
-        """
-            os.environ["FEUILLE_KEYS"] = json.dumps(json.loads(TEMP_JSON))
+            {
+                "WARNING": "DO NOT SHARE THIS FILE WITH ANYONE",
+                "feuille": "true",
+                "keys": {"DJAPPSTORE": "MYKEY", "FEUILLESTORE": "MYKEY", "PAXOSTORE": "MYKEY"}
+            }
+            """
+            with open(self.file_path,"w") as f:
+                f.write(TEMP_JSON)
 
 
 class Stores_Handlers():
     print("[+] : Loading...")
+    # ik this code is very ugly...
     def dj_appstore():
-        print("[+] : Todo")
+        SCRET = Secrets_Handlers()
+        data = json.load(open("feuille.json","r"))
+        print("[+] : Getting token from DB")
+        if SCRET.get_key("DJAPPSTORE") is  None or SCRET.get_key("DJAPPSTORE") == "MYKEY":
+            print("[?] : Enter your DJAppStoreKey")
+            SCRET.modify_key("DJAPPSTORE",input("Key : "))
+            print("[+] : Done")
+            Stores_Handlers.dj_appstore()
+        else:
+            print("[+] : Checking for recent build...")
+            if os.path.exists("dist/app.lua"):
+                print("[+] : Build found")
+                print("[+] : Zipping...")
+                with tarfile.open("export.tar", "w") as tar:
+                    tar.add("dist/app.lua")
+                    tar.add("dist/assets")
+                    for i in os.listdir("dist/assets"):
+                        tar.add(f"dist/assets/{i}")
+                    tar.add("feuille.json")
+                print("[+] : Uploading...")
+                ICON_PATH = f"dist/{data["assets_folder"]}/{data['icon']}"
+                x = requests.get(url="https://45.90.12.31:6517/add_app/paxo/",verify=False,cookies={"id_creator":SCRET.get_key("DJAPPSTORE")},data={"name":data["name"],"description":data["description"]},files={"icon":open(ICON_PATH,"rb"),"appfile":open("export.tar","rb")})
+                print(x.status_code)
+                print(x.text)
+                print("[+] : Done")
+                input("pres enter to exit")
+            else:
+                print("[-] : No build found")
+                print("[TIPS] : Use feuille -l to link all files and distribute your app !")
+
     def feuillestore():
         print("[+] : Todo")
     def paxostore():
