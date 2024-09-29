@@ -123,6 +123,7 @@ def main():
                 with tarfile.open("dist/dist.tar", "w:gz") as tar:
                     tar.add("dist", arcname=os.path.basename("dist"))
                     tar.add("feuille.json")
+
                 print("[+] : Linking done, saved in /dist/app.lua / or for sending to a appstore saved to /dist/dist.tar")
         else:
             print("[-] Not found")
@@ -169,10 +170,10 @@ def main():
             if not os.path.exists("dist"):
                 os.mkdir("dist")
             with tarfile.open("dist/dist.tar", "w:gz") as tar:
-                tar.add("src", arcname=os.path.basename("src"))
-                tar.add("assets", arcname=os.path.basename("assets"))
+                tar.add("dist", arcname=os.path.basename("dist"))
                 tar.add("feuille.json")
             print("[+] : Export done, saved in /dist/dist.tar")
+        
         else:
             print("[-] : No feuille project found")
     elif args.run:
