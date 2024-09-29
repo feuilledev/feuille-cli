@@ -1,3 +1,4 @@
+
 '''
 🌿 FEUILLE-CLI
 (2024 FeuilleDev team)
@@ -8,6 +9,10 @@ import json
 from .utils import *
 import base64
 import shutil
+import subprocess
+import threading
+import zipfile
+
 TEMPLATE_JSON = """
 {
     "name":"App_Name",
@@ -23,7 +28,7 @@ TEMPLATE_JSON = """
         "function_test_hello.lua"
     ],
     "assets_folder":"assets",
-
+    "permissions": {"storage": "true", "internet": "true"},
     "feuille_version":"1.0.0"
 }
 
@@ -42,6 +47,8 @@ def main():
     argparser.add_argument('-l', '--link', help='Link all files from a folder', action='store_true')
     argparser.add_argument('-c', '--config', help='Configuration of the feuille project', action='store_true')
     argparser.add_argument('-u', '--upload', help='Upload the app to DJAppStore/FeuilleStore/PaxoStore', action='store_true')
+    argparser.add_argument('-r', '--run', help='Launch the emulator', action='store_true')
+    argparser.add_argument('-t', '--tar', help='Exporting to a tar.gz', action='store_true')
     args = argparser.parse_args()
 
     if args.version:
@@ -112,7 +119,11 @@ def main():
                 for i in os.listdir("assets"):
                     print(i)
                     shutil.copy(f"assets/{i}",f"dist/assets/{i}");shutil.copy(f"assets/{i}",f"dist/{i}")
-                print("[+] Done, saved in /dist/app.lua")
+                #adding all files under /dist folder to a tar.gz
+                with tarfile.open("dist/dist.tar", "w:gz") as tar:
+                    tar.add("dist", arcname=os.path.basename("dist"))
+                    tar.add("feuille.json")
+                print("[+] : Linking done, saved in /dist/app.lua / or for sending to a appstore saved to /dist/dist.tar")
         else:
             print("[-] Not found")
             print("Please create a new project.")
@@ -152,6 +163,80 @@ def main():
                 store_select = input("[?] : Select a store to upload to : ")
                 if store_select == "2":
                     Stores_Handlers.dj_appstore()
+    elif args.tar:
+        if os.path.exists("feuille.json"):
+            # adding folder /src and assets to a tar.gz (creating)
+            if not os.path.exists("dist"):
+                os.mkdir("dist")
+            with tarfile.open("dist/dist.tar", "w:gz") as tar:
+                tar.add("src", arcname=os.path.basename("src"))
+                tar.add("assets", arcname=os.path.basename("assets"))
+                tar.add("feuille.json")
+            print("[+] : Export done, saved in /dist/dist.tar")
+        else:
+            print("[-] : No feuille project found")
+    elif args.run:
+        if os.path.exists("feuille.json"):
+            print("[+] : Checking for emulator")
+            if os.path.exists("paxoemu/program.exe"):
+                print("[+] : Emulator found")
+                process_sub =subprocess.Popen("paxoemu/program.exe")
+                # monitoring ram usage (if depass > 4mo closing and warning)
+                def monitor_emulator():
+                    while True:
+                        if process_sub.poll() is not None:
+                            print("[+] : Emulator closed")
+                            break
+                        # check exit code
+                        if process_sub.returncode is not None:
+                            if process_sub.returncode == 0:
+                                print("[+] : Emulator closed")
+                                break
+                            else:
+                                print("[!] : Emulator closed with error code")
+                                break
+                        else:
+                            terminal_utils.clear()
+                            print("====================================================")
+                            print("MONITORING IN PROCESS")
+                            print("> FeuilleCLI is actually monitoring the emulator")
+                            import psutil
+                            process = psutil.Process(process_sub.pid)
+                            ram = process.memory_info().rss
+                            if ram > 4*1024*1024*1024:
+                                print("[!] : RAM usage is too high, closing")
+                                process_sub.kill()
+                                break     
+                            print(F"RAM usage : {ram/1024/1024/1024} Mo/4 Mo")
+                            print("====================================================")
+
+                            time.sleep(1)
+                thread = threading.Thread(target=monitor_emulator)
+                thread.start()
+            else:
+                print("[-] : Emulator not found")
+                print("Downloading PaxoEmulator")
+                x = requests.get("https://github.com/paxo-phone/PaxOS-9/releases/download/stable/windows-build.zip")
+                with open("paxoemu.zip","wb") as f:
+                    f.write(x.content)
+                print("[+] : Unzipping")
+                with zipfile.ZipFile("paxoemu.zip", "r") as zip_ref:
+                    zip_ref.extractall("paxoemu")
+                print("[+] : Copying storage folder to project root")
+                # copying everthing froom the root folder
+                os.makedirs("storage")
+                xstorage = requests.get("https://github.com/feuilledev/files/raw/refs/heads/main/emu-storage.zip")
+                with open("storage.zip","wb") as f:
+                    f.write(xstorage.content)
+                with zipfile.ZipFile("storage.zip", "r") as zip_ref:
+                    zip_ref.extractall("storage")
+                    
+                print("[+] : Cleaning")
+                os.remove("paxoemu.zip")
+                os.remove("storage.zip")
+                print("[+] : Please relaunch the command")
+        else:
+            print("[-] : No feuille.json found")
         
 if __name__ == "__main__":
     main()
