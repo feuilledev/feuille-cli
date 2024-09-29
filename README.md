@@ -26,6 +26,8 @@ pip install .
 -l, --link     Link all files from a folder
 -c, --config   Configuration of the feuille project
 -u, --upload   Upload the app to DJAppStore/FeuilleStore/PaxoStore
+-t --tar       Exporting to a tar.gz
+-r --run       Launch the emulator
 ```
 ## Stores
 > List of all supported stores
